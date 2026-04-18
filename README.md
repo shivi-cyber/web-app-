@@ -1,7 +1,13 @@
 # ⚡ AttentionX — AI Content Repurposing Engine
 
 > Turn 1-hour videos into viral short clips using AI. Built for the UnsaidTalks AttentionX AI Hackathon.
----
+demo video:
+Uploading Screen Recording 2026-04-18 212354 (1) (1).mp4…
+
+
+
+
+
 ## 🧠 What it does
 
 AttentionX analyzes long-form video content and automatically:
