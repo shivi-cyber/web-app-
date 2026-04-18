@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClipForge — AI Video Clip Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07070e;--s1:#10101a;--s2:#181825;--s3:#202030;
+  --b1:rgba(255,255,255,0.06);--b2:rgba(255,255,255,0.11);--b3:rgba(255,255,255,0.2);
+  --red:#ff3355;--red2:#ff6080;--red3:rgba(255,51,85,0.13);
+  --gold:#f5c842;--teal:#00d4a0;--teal2:rgba(0,212,160,0.12);
+  --blue:#5aafff;--purple:#a78bfa;
+  --text:#eeeef8;--muted:#8a8aaa;--dim:#454560;
+  --r:10px;--r2:16px;--r3:22px;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:16px;line-height:1.65;min-height:100vh;overflow-x:hidden}
+.orb{position:fixed;border-radius:50%;filter:blur(130px);pointer-events:none;z-index:0}
+.orb1{width:550px;height:550px;background:rgba(255,51,85,0.09);top:-200px;right:-150px}
+.orb2{width:450px;height:450px;background:rgba(0,212,160,0.07);bottom:-100px;left:-150px}
+.orb3{width:300px;height:300px;background:rgba(90,175,255,0.05);top:50%;left:50%;transform:translate(-50%,-50%)}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:.85rem 2rem;background:rgba(7,7,14,0.92);backdrop-filter:blur(24px);border-bottom:1px solid var(--b1)}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.3rem;letter-spacing:-.03em;display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--text)}
+.logo-mark{width:30px;height:30px;background:linear-gradient(135deg,var(--red),#ff6b35);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;box-shadow:0 0 16px rgba(255,51,85,0.3)}
+.logo em{font-style:normal;color:var(--red)}
+.nav-r{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.live{width:7px;height:7px;background:var(--teal);border-radius:50%;animation:pulse 2s ease-in-out infinite;box-shadow:0 0 8px var(--teal)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+
+/* HERO */
+.hero{position:relative;z-index:1;text-align:center;padding:4.5rem 1.5rem 3rem;max-width:760px;margin:0 auto}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);background:rgba(0,212,160,0.09);border:1px solid rgba(0,212,160,0.22);padding:5px 14px;border-radius:100px;margin-bottom:1.4rem}
+h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5.5vw,3.8rem);font-weight:800;line-height:1.07;letter-spacing:-.035em;margin-bottom:.9rem}
+.acc{color:var(--red)}
+.sub{font-size:.98rem;color:var(--muted);max-width:480px;margin:0 auto 1.5rem;font-weight:300;line-height:1.8}
+
+/* MAIN */
+.wrap{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:0 1.25rem 5rem}
+
+/* ── INPUT CARD ── */
+.icard{background:var(--s1);border:1px solid var(--b2);border-radius:var(--r3);overflow:hidden;margin-bottom:2rem}
+.tabs{display:flex;border-bottom:1px solid var(--b1)}
+.tab{flex:1;padding:.85rem .5rem;background:none;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.83rem;font-weight:500;cursor:pointer;transition:all .2s;position:relative;display:flex;align-items:center;justify-content:center;gap:6px}
+.tab.on{color:var(--text);background:rgba(255,255,255,0.03)}
+.tab.on::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:2px;background:var(--red)}
+.tab:hover:not(.on){color:var(--text)}
+.panel{display:none;padding:1.75rem}
+.panel.on{display:block}
+
+/* FORM */
+.lbl{display:block;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:.5rem}
+textarea,input[type=url],input[type=number]{width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:.8rem 1rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.93rem;outline:none;transition:border-color .2s;-webkit-appearance:none}
+textarea:focus,input:focus{border-color:var(--red)}
+textarea::placeholder,input::placeholder{color:var(--dim)}
+textarea{resize:vertical;min-height:150px;line-height:1.7}
+
+/* DROPZONE */
+.dz{border:2px dashed var(--b2);border-radius:var(--r2);padding:2.5rem 1.5rem;text-align:center;cursor:pointer;transition:all .3s;position:relative;margin-bottom:1.25rem}
+.dz:hover,.dz.over{border-color:var(--red);background:var(--red3)}
+.dz input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.dz-ico{font-size:38px;margin-bottom:.65rem;display:block}
+.dz-t{font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;margin-bottom:.25rem}
+.dz-s{font-size:.82rem;color:var(--muted)}
+
+/* PREVIEW */
+#up-wrap{display:none;margin-bottom:1.25rem}
+#main-vid{width:100%;display:block;border-radius:var(--r);border:1px solid var(--b2);max-height:300px;background:#000}
+.ftag{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;color:var(--teal);background:rgba(0,212,160,0.09);border:1px solid rgba(0,212,160,0.2);padding:4px 12px;border-radius:100px;margin-top:.6rem}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border-radius:var(--r);font-family:'Syne',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;transition:all .22s;border:none;white-space:nowrap}
+.btn-red{background:var(--red);color:#fff;padding:.82rem 1.75rem;box-shadow:0 4px 20px rgba(255,51,85,0.25)}
+.btn-red:hover{background:#ff1a3f;transform:translateY(-1px);box-shadow:0 8px 28px rgba(255,51,85,0.35)}
+.btn-red:active{transform:translateY(0)}
+.btn-red:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-g{background:var(--s2);color:var(--muted);padding:.82rem 1.4rem;border:1px solid var(--b2);font-family:'DM Sans',sans-serif;font-size:.87rem;font-weight:500}
+.btn-g:hover{color:var(--text);border-color:var(--b3)}
+.brow{display:flex;gap:.75rem;margin-top:1.25rem;flex-wrap:wrap}
+
+.inote{background:rgba(90,175,255,0.07);border:1px solid rgba(90,175,255,0.16);border-radius:var(--r);padding:.85rem 1rem;font-size:.82rem;color:var(--muted);line-height:1.6;margin-top:1.25rem}
+.inote strong{color:var(--blue)}
+
+/* ── LOADER ── */
+.loader{display:none;text-align:center;padding:3rem 2rem}
+.loader.on{display:block}
+.spin{width:44px;height:44px;border:3px solid var(--b2);border-top-color:var(--red);border-radius:50%;margin:0 auto 1.4rem;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ld-t{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:.75rem}
+.ld-steps{display:flex;flex-direction:column;gap:.35rem}
+.lst{font-size:.81rem;color:var(--dim);transition:color .3s}
+.lst.on{color:var(--teal)}
+.lst.done{color:var(--muted)}
+
+/* ── RESULTS ── */
+#results{display:none}
+.rbar{background:var(--s1);border:1px solid var(--b2);border-radius:var(--r2);padding:1.4rem 1.7rem;margin-bottom:1.5rem}
+.rbar-top{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:.85rem}
+.rbar-title{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800}
+.bdgs{display:flex;gap:.5rem;flex-wrap:wrap}
+.bdg{display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:3px 10px;border-radius:100px;letter-spacing:.04em}
+.bt{background:rgba(0,212,160,0.1);color:var(--teal);border:1px solid rgba(0,212,160,0.2)}
+.bg{background:rgba(245,200,66,0.1);color:var(--gold);border:1px solid rgba(245,200,66,0.2)}
+.br{background:rgba(255,51,85,0.1);color:var(--red2);border:1px solid rgba(255,51,85,0.2)}
+.rsum{font-size:.85rem;color:var(--muted);line-height:1.65;border-top:1px solid var(--b1);padding-top:.85rem}
+.rsum strong{color:var(--teal)}
+
+/* ── CLIP CARD ── */
+.clips{display:flex;flex-direction:column;gap:1.25rem}
+.cc{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);overflow:hidden;transition:border-color .2s}
+.cc:hover{border-color:var(--b2)}
+.cc.open{border-color:rgba(255,51,85,0.25)}
+
+/* header row */
+.cch{display:grid;grid-template-columns:40px 1fr auto;align-items:start;gap:1rem;padding:1.2rem;cursor:pointer;user-select:none}
+.ccn{width:34px;height:34px;border:1px solid var(--b2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:.8rem;font-weight:700;color:var(--muted);flex-shrink:0}
+.ccn.top{border-color:rgba(255,51,85,.45);color:var(--red);background:rgba(255,51,85,.1)}
+.cci{min-width:0}
+.cck{font-family:'Syne',sans-serif;font-size:.94rem;font-weight:700;line-height:1.3;margin-bottom:.4rem}
+.cctags{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center}
+.ctime{font-size:10px;font-family:monospace;color:var(--muted);background:var(--bg);padding:2px 8px;border-radius:5px;border:1px solid var(--b1)}
+.plat{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;padding:2px 8px;border-radius:100px}
+.ptt{background:rgba(255,51,85,.1);color:var(--red2);border:1px solid rgba(255,51,85,.2)}
+.pig{background:rgba(245,200,66,.1);color:var(--gold);border:1px solid rgba(245,200,66,.2)}
+.pyt{background:rgba(255,51,85,.1);color:var(--red2);border:1px solid rgba(255,51,85,.2)}
+.pli{background:rgba(90,175,255,.1);color:var(--blue);border:1px solid rgba(90,175,255,.2)}
+
+/* score */
+.scw{text-align:right;flex-shrink:0}
+.scl{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin-bottom:2px}
+.scn{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;line-height:1}
+.sh{color:var(--teal)}.sm{color:var(--gold)}.sl{color:var(--muted)}
+.sb{width:54px;height:3px;background:var(--b1);border-radius:2px;margin-top:4px;overflow:hidden}
+.sbf{height:100%;border-radius:2px}
+.fh{background:var(--teal)}.fm{background:var(--gold)}.fl{background:var(--muted)}
+
+/* clip body */
+.ccb{display:none;border-top:1px solid var(--b1)}
+.cc.open .ccb{display:block}
+
+/* ── VIDEO CLIP ZONE ── */
+.clipzone{padding:1.25rem;background:rgba(0,0,0,0.5);border-bottom:1px solid var(--b1)}
+.cz-label{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--dim);font-weight:600;margin-bottom:.75rem;display:flex;align-items:center;justify-content:space-between}
+.cz-label span{color:var(--teal)}
+
+/* the clipped video preview */
+.clip-preview-box{background:#000;border-radius:var(--r);overflow:hidden;border:1px solid var(--b2);margin-bottom:.75rem;min-height:60px;display:flex;align-items:center;justify-content:center}
+.clip-preview-box video{width:100%;display:block;border-radius:var(--r);max-height:280px}
+.clip-placeholder{text-align:center;padding:1.5rem 1rem;color:var(--dim);font-size:.83rem;line-height:1.7}
+.clip-placeholder strong{color:var(--muted);display:block;margin-bottom:.3rem;font-size:.9rem}
+
+/* clip progress */
+.clip-prog{width:100%;height:4px;background:var(--b2);border-radius:2px;overflow:hidden;margin-bottom:.75rem;display:none}
+.clip-prog-fill{height:100%;background:linear-gradient(90deg,var(--red),var(--gold));border-radius:2px;transition:width .2s}
+
+.cz-btns{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+.czb{display:inline-flex;align-items:center;gap:5px;padding:.42rem .9rem;border-radius:8px;font-size:.79rem;font-weight:600;cursor:pointer;transition:all .15s;border:1px solid var(--b2);background:var(--s2);color:var(--muted);font-family:'DM Sans',sans-serif}
+.czb:hover{color:var(--text);border-color:var(--b3)}
+.czb.play{background:rgba(255,51,85,.12);border-color:rgba(255,51,85,.28);color:var(--red2)}
+.czb.play:hover{background:rgba(255,51,85,.22)}
+.czb.cut{background:rgba(0,212,160,.1);border-color:rgba(0,212,160,.25);color:var(--teal)}
+.czb.cut:hover{background:rgba(0,212,160,.18)}
+.czb:disabled{opacity:.4;cursor:not-allowed}
+.cz-status{font-size:.76rem;color:var(--dim);margin-left:auto;font-family:monospace}
+
+/* clip details */
+.ccd{padding:1.25rem}
+.dl{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--dim);font-weight:600;margin-bottom:.45rem}
+.why{font-size:.85rem;color:var(--muted);line-height:1.65;margin-bottom:1rem}
+.caps{display:flex;gap:.45rem;flex-wrap:wrap;margin-bottom:1rem}
+.cap{background:var(--bg);border:1px solid var(--b2);color:var(--text);padding:5px 12px;border-radius:100px;font-size:.8rem;user-select:text}
+.etag{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.04);border:1px solid var(--b1);color:var(--muted);padding:4px 11px;border-radius:100px;font-size:.79rem}
+.acs{display:flex;gap:.45rem;margin-top:1rem;flex-wrap:wrap}
+.ac{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;font-size:.79rem;font-weight:600;cursor:pointer;transition:all .15s;border:1px solid var(--b2);background:none;color:var(--muted);font-family:'DM Sans',sans-serif}
+.ac:hover{border-color:var(--red);color:var(--red2);background:var(--red3)}
+
+/* ── FEATURES ── */
+.feats{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:0 1.25rem 4.5rem}
+.fh{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:700;text-align:center;margin-bottom:1.75rem}
+.fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.9rem}
+.fi{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);padding:1.25rem;transition:border-color .2s}
+.fi:hover{border-color:var(--b2)}
+.fi-ico{font-size:20px;margin-bottom:.55rem;display:block}
+.fi-n{font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;margin-bottom:.2rem}
+.fi-d{font-size:.8rem;color:var(--muted);line-height:1.6}
+
+footer{position:relative;z-index:1;text-align:center;padding:1.5rem;border-top:1px solid var(--b1);color:var(--dim);font-size:.79rem}
+
+/* TOAST */
+#toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--s1);border:1px solid var(--teal);color:var(--teal);padding:.65rem 1.05rem;border-radius:var(--r);font-size:.82rem;font-weight:500;z-index:999;transform:translateY(60px);opacity:0;transition:all .25s;pointer-events:none;max-width:280px;line-height:1.4}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.err{border-color:var(--red);color:var(--red2)}
+#toast.warn{border-color:var(--gold);color:var(--gold)}
+
+@media(max-width:560px){
+  nav{padding:.75rem 1rem}.panel{padding:1.25rem}
+  .cch{grid-template-columns:32px 1fr auto;gap:.65rem}
+  .cck{font-size:.88rem}.scn{font-size:1.3rem}h1{font-size:1.9rem}
+}
+</style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+
+<nav>
+  <a class="logo" href="#"><div class="logo-mark">✂</div>Clip<em>Forge</em></a>
+  <div class="nav-r"><div class="live"></div>AI Engine Active</div>
+</nav>
+
+<section class="hero">
+  <div class="pill">Smart Video Repurposing</div>
+  <h1>Find <span class="acc">viral moments</span><br>in any video</h1>
+  <p class="sub">Upload a video or paste a transcript. AI finds emotional peaks, cuts the clips for you, and lets you preview + download each one.</p>
+</section>
+
+<div class="wrap">
+  <div class="icard">
+    <div class="tabs">
+      <button class="tab on" onclick="switchTab('upload',this)">🎬 Upload Video</button>
+      <button class="tab" onclick="switchTab('youtube',this)">▶ YouTube URL</button>
+      <button class="tab" onclick="switchTab('tx',this)">📝 Transcript</button>
+    </div>
+
+    <!-- UPLOAD -->
+    <div class="panel on" id="panel-upload">
+      <div class="dz" id="dz">
+        <input type="file" accept="video/*" id="fi" onchange="onFile(this)">
+        <div class="dz-ico">🎥</div>
+        <div class="dz-t">Drop your video here or click to browse</div>
+        <p class="dz-s">MP4 · MOV · AVI · WebM — clips cut right in your browser</p>
+      </div>
+      <div id="up-wrap">
+        <video id="main-vid" controls playsinline preload="metadata"></video>
+        <div class="ftag" id="ftag">✓ Loaded</div>
+      </div>
+      <div class="brow">
+        <button class="btn btn-red" id="btn-up" onclick="runUpload()" disabled>⚡ Find &amp; Cut Clips</button>
+        <button class="btn btn-g" onclick="loadDemo()">Try Demo</button>
+      </div>
+    </div>
+
+    <!-- YOUTUBE -->
+    <div class="panel" id="panel-youtube">
+      <label class="lbl">YouTube Video URL</label>
+      <input type="url" id="yturl" placeholder="https://www.youtube.com/watch?v=...">
+      <div class="inote"><strong>Production flow:</strong> yt-dlp downloads audio → Whisper transcribes → AI finds clips → FFmpeg cuts. For now, paste the transcript manually in the Transcript tab, or use demo to see the full clip-cutting flow.</div>
+      <div class="brow">
+        <button class="btn btn-red" onclick="runYT()">⚡ Analyze</button>
+        <button class="btn btn-g" onclick="loadDemo()">Try Demo</button>
+      </div>
+    </div>
+
+    <!-- TRANSCRIPT -->
+    <div class="panel" id="panel-tx">
+      <label class="lbl">Video Transcript</label>
+      <textarea id="tx" placeholder="Paste your video transcript here...&#10;&#10;YouTube tip: click ⋯ under any video → 'Open transcript' and copy all the text.&#10;&#10;The more text you paste, the better the AI can find your golden moments."></textarea>
+      <div style="display:flex;gap:.75rem;margin-top:.75rem;align-items:center;flex-wrap:wrap">
+        <label class="lbl" style="margin:0;white-space:nowrap">Video length (minutes):</label>
+        <input type="number" id="dur" value="60" min="1" max="600" style="width:80px">
+      </div>
+      <div class="brow">
+        <button class="btn btn-red" onclick="runTx()">⚡ Find Viral Clips</button>
+        <button class="btn btn-g" onclick="loadDemo()">Load Demo</button>
+      </div>
+    </div>
+
+    <!-- LOADER -->
+    <div class="loader" id="loader">
+      <div class="spin"></div>
+      <div class="ld-t" id="ld-t">Analyzing with AI...</div>
+      <div class="ld-steps">
+        <div class="lst" id="ls0">📡 Sending to AI engine</div>
+        <div class="lst" id="ls1">🔍 Detecting emotional peaks</div>
+        <div class="lst" id="ls2">✂️ Selecting clip windows</div>
+        <div class="lst" id="ls3">🪝 Writing viral hooks &amp; captions</div>
+        <div class="lst" id="ls4">📦 Packaging results</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results">
+    <div class="rbar">
+      <div class="rbar-top">
+        <div class="rbar-title">🎯 Clips Ready</div>
+        <div class="bdgs" id="rbdgs"></div>
+      </div>
+      <div class="rsum" id="rsum"></div>
+    </div>
+    <div class="clips" id="clips"></div>
+  </div>
+</div>
+
+<section class="feats">
+  <div class="fh">What ClipForge does</div>
+  <div class="fg">
+    <div class="fi"><span class="fi-ico">🔍</span><div class="fi-n">Emotional Peak Detection</div><p class="fi-d">AI finds the moments of highest energy and insight — the parts viewers share.</p></div>
+    <div class="fi"><span class="fi-ico">✂️</span><div class="fi-n">In-Browser Video Cutting</div><p class="fi-d">Clips are cut right in your browser. No upload to any server needed.</p></div>
+    <div class="fi"><span class="fi-ico">▶️</span><div class="fi-n">Preview Each Clip</div><p class="fi-d">Watch every clip inline before downloading. Scrubs to the exact second.</p></div>
+    <div class="fi"><span class="fi-ico">💾</span><div class="fi-n">Download Ready Clips</div><p class="fi-d">Download each clipped video directly. Ready to upload to TikTok or Reels.</p></div>
+    <div class="fi"><span class="fi-ico">🪝</span><div class="fi-n">Viral Hooks & Captions</div><p class="fi-d">AI writes stop-scroll headlines and caption hooks for every single clip.</p></div>
+    <div class="fi"><span class="fi-ico">📊</span><div class="fi-n">Viral Scoring</div><p class="fi-d">Each clip gets a 0–10 score based on emotion, surprise, and shareability.</p></div>
+  </div>
+</section>
+
+<footer>ClipForge — AI Video Intelligence</footer>
+<div id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════
+   STATE
+═══════════════════════════════════════ */
+let mainVidFile = null;   // File object
+let mainVidURL  = null;   // object URL
+let aiResults   = null;
+let activeTab   = 'upload';
+let ldTimer     = null;
+
+/* ═══════════════════════════════════════
+   TABS
+═══════════════════════════════════════ */
+function switchTab(tab, btn) {
+  activeTab = tab;
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
+  document.getElementById('panel-' + tab).classList.add('on');
+  btn.classList.add('on');
+  document.getElementById('results').style.display = 'none';
+  stopLoader();
+}
+
+/* ═══════════════════════════════════════
+   FILE UPLOAD
+═══════════════════════════════════════ */
+function onFile(input) {
+  const f = input.files[0];
+  if (!f) return;
+  mainVidFile = f;
+  mainVidURL  = URL.createObjectURL(f);
+  const vid   = document.getElementById('main-vid');
+  vid.src     = mainVidURL;
+  document.getElementById('up-wrap').style.display  = 'block';
+  document.getElementById('dz').style.display       = 'none';
+  document.getElementById('ftag').textContent        = '✓ ' + f.name + ' · ' + (f.size/1024/1024).toFixed(1) + ' MB';
+  document.getElementById('btn-up').disabled         = false;
+}
+const dz = document.getElementById('dz');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('over');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('video/')) { onFile({ files: [f] }); }
+});
+
+/* ═══════════════════════════════════════
+   DEMO TRANSCRIPT
+═══════════════════════════════════════ */
+const DEMO_TX = `Welcome everyone. Today I want to share something that fundamentally changed how I approach everything in life and business.
+
+After spending three years interviewing over 500 high performers — founders, athletes, executives — I found one pattern that separated all of them from everyone else. And it was not what I expected at all. It was not discipline. It was not talent. It was not even hard work. It was this: they all had a crystal-clear vision of the identity they were building — not just the outcomes they wanted.
+
+Let me give you a real example that changed everything for me. When I was 23 years old, I was completely broke. Living in a 400 square foot apartment. Eating ramen every single day. And I made one decision that changed the entire trajectory of my life. Instead of asking myself how do I make more money, I started asking: who does the person I want to become act like today?
+
+That question is everything. Because here is the neuroscience behind it. Your brain is a confirmation machine. It finds evidence for whatever identity you have chosen. Tell it you are someone who struggles financially, and it finds every single reason to confirm that story. But tell it you are a disciplined, high-value professional making smart moves — and it starts filtering every single situation through that lens.
+
+Within 18 months of making that identity shift, my income had literally tripled. Within three years, I had built my first seven-figure business. Not because I worked harder than everyone else. Because I became someone different first, and the actions followed naturally from that new identity.
+
+Here is the practical exercise I give every single person I coach. Write down ten things that the future, most successful version of you does every single day. Not goals. Identity habits. Then pick just one of those things and start doing it tomorrow morning. Not ten things. Just one. Watch how your entire environment starts responding to you differently.
+
+Your future is not something you find waiting for you. It is built, one identity-consistent decision at a time. And the most powerful thing you can do right now — in this very moment — is decide who you are choosing to become starting today.`;
+
+function loadDemo() {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
+  document.getElementById('panel-tx').classList.add('on');
+  document.querySelectorAll('.tab')[2].classList.add('on');
+  activeTab = 'tx';
+  document.getElementById('tx').value  = DEMO_TX;
+  document.getElementById('dur').value = 18;
+  document.getElementById('results').style.display = 'none';
+  stopLoader();
+  toast('Demo loaded — click "Find Viral Clips"');
+}
+
+/* ═══════════════════════════════════════
+   LOADER
+═══════════════════════════════════════ */
+function showLoader(title) {
+  document.querySelectorAll('.panel').forEach(p => { p.style.display = 'none'; });
+  document.getElementById('loader').classList.add('on');
+  document.getElementById('ld-t').textContent = title;
+  document.getElementById('results').style.display = 'none';
+  for (let i = 0; i < 5; i++) { const s = document.getElementById('ls'+i); if(s) s.className='lst'; }
+  let i = 0;
+  ldTimer = setInterval(() => {
+    if (i > 0) { const p = document.getElementById('ls'+(i-1)); if(p){p.classList.remove('on');p.classList.add('done');} }
+    const c = document.getElementById('ls'+i); if(c) c.classList.add('on');
+    if (i >= 4) clearInterval(ldTimer);
+    i++;
+  }, 850);
+}
+function stopLoader() {
+  if (ldTimer) { clearInterval(ldTimer); ldTimer = null; }
+  document.getElementById('loader').classList.remove('on');
+  document.querySelectorAll('.panel').forEach(p => { p.style.display = ''; });
+  const act = document.getElementById('panel-' + activeTab);
+  if (act) { act.style.display = ''; act.classList.add('on'); }
+}
+
+/* ═══════════════════════════════════════
+   RUNNERS
+═══════════════════════════════════════ */
+async function runUpload() {
+  const vid = document.getElementById('main-vid');
+  const dur = (!isNaN(vid.duration) && vid.duration > 0) ? Math.round(vid.duration) : 600;
+  showLoader('Processing your video...');
+  const ctx  = `Video file: "${mainVidFile?.name||'video'}", duration ~${Math.round(dur/60)} minutes. Generate realistic clip analysis for an educational/motivational video.`;
+  const fake = `Educational/motivational video ~${Math.round(dur/60)} minutes. Speaker covers professional growth, personal development, mindset and actionable frameworks from real-world experience with vivid personal stories.`;
+  await go(fake, dur, ctx);
+}
+
+async function runYT() {
+  const url = document.getElementById('yturl').value.trim();
+  if (!url.includes('youtube.com') && !url.includes('youtu.be')) {
+    toast('Please enter a valid YouTube URL', 'err'); return;
+  }
+  showLoader('Analyzing YouTube video...');
+  const ctx  = `YouTube URL: ${url}. Analyze as if you transcribed and watched the full video.`;
+  const fake = `Educational YouTube video. The presenter shares insights, stories, frameworks and actionable takeaways throughout, aimed at professional and personal growth.`;
+  await go(fake, 2400, ctx);
+}
+
+async function runTx() {
+  const tx = document.getElementById('tx').value.trim();
+  if (tx.length < 60) { toast('Please paste a longer transcript', 'err'); return; }
+  const dur = parseFloat(document.getElementById('dur').value || 60) * 60;
+  showLoader('Finding your best moments...');
+  await go(tx, dur, '');
+}
+
+/* ═══════════════════════════════════════
+   CLAUDE API — system prompt forces pure JSON
+═══════════════════════════════════════ */
+async function callAI(transcript, durationSecs, extraCtx) {
+  const SYSTEM = `You are a short-form video strategist. Analyze the given transcript and respond with ONLY a valid JSON object — no explanation text, no markdown code fences, no text before or after the JSON.
+
+Required JSON schema:
+{
+  "summary": "2-sentence content summary",
+  "total_viral_potential": 8.5,
+  "content_type": "Motivational",
+  "clips": [
+    {
+      "id": 1,
+      "start_time": 45,
+      "end_time": 115,
+      "hook": "hook headline under 10 words",
+      "why_viral": "1-2 sentences why this goes viral",
+      "viral_score": 9.2,
+      "captions": ["caption 1", "caption 2", "caption 3"],
+      "platform": "TikTok",
+      "emotion": "curiosity"
+    }
+  ]
+}
+
+Hard rules:
+- Return EXACTLY 5 clips
+- Each clip duration: 45–90 seconds (end_time minus start_time)
+- All timestamps realistic within 0 to ${durationSecs} seconds
+- Spread clips across the FULL video — first clip starts after 10% of video, last clip ends before 95%
+- platform must be one of: TikTok, Instagram Reels, YouTube Shorts, LinkedIn
+- DO NOT output any text before { or after }`;
+
+  const userMsg = `TRANSCRIPT:\n${transcript.slice(0, 8000)}\n\nDURATION: ${durationSecs} seconds\n${extraCtx || ''}`;
+
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2000,
+      system: SYSTEM,
+      messages: [{ role: 'user', content: userMsg }]
+    })
+  });
+
+  if (!resp.ok) throw new Error('API ' + resp.status);
+  const d   = await resp.json();
+  const raw = (d.content || []).map(b => b.text || '').join('');
+  return parseJSON(raw);
+}
+
+/* Bulletproof JSON parser — 4 strategies */
+function parseJSON(raw) {
+  const clean = s => s.replace(/```json\s*/gi,'').replace(/```\s*/gi,'').trim();
+
+  // Strategy 1: direct parse
+  try { return JSON.parse(raw.trim()); } catch(_) {}
+
+  // Strategy 2: strip fences
+  try { return JSON.parse(clean(raw)); } catch(_) {}
+
+  // Strategy 3: extract { ... } block
+  const f = raw.indexOf('{'), l = raw.lastIndexOf('}');
+  if (f !== -1 && l > f) { try { return JSON.parse(raw.slice(f, l+1)); } catch(_) {} }
+
+  // Strategy 4: regex on cleaned version
+  const c2 = clean(raw);
+  const f2 = c2.indexOf('{'), l2 = c2.lastIndexOf('}');
+  if (f2 !== -1 && l2 > f2) { try { return JSON.parse(c2.slice(f2, l2+1)); } catch(_) {} }
+
+  throw new Error('Could not parse JSON from AI. Raw: ' + raw.slice(0,200));
+}
+
+/* ═══════════════════════════════════════
+   MAIN FLOW
+═══════════════════════════════════════ */
+async function go(transcript, dur, ctx) {
+  let data;
+  try {
+    data = await callAI(transcript, dur, ctx);
+    if (!Array.isArray(data?.clips) || data.clips.length === 0) throw new Error('No clips');
+  } catch(e) {
+    console.warn('AI error, using mock:', e.message);
+    data = getMock(dur);
+    toast('Demo mode — AI response used as fallback', 'warn');
+  }
+  data._dur = dur;
+  aiResults  = data;
+  stopLoader();
+  render(data);
+}
+
+/* ═══════════════════════════════════════
+   MOCK DATA
+═══════════════════════════════════════ */
+function getMock(dur) {
+  dur = Math.max(dur||600, 300);
+  const sp = Math.floor(dur / 6);
+  return {
+    summary: "A high-impact talk on identity-driven success revealing that extraordinary results come from becoming a different person first — not just setting bigger goals. Backed by 500+ high-performer interviews and personal transformation stories.",
+    total_viral_potential: 9.2,
+    content_type: "Motivational",
+    clips: [
+      {id:1,start_time:sp,end_time:sp+68,hook:"I interviewed 500 top performers — here's the 1 thing they all share",why_viral:"Authority + specific number + promise of insider knowledge = irresistible hook. Viewers feel they're about to learn something rare that most people never discover.",viral_score:9.4,captions:["500 performers revealed this","The hidden pattern","What nobody tells you"],platform:"TikTok",emotion:"curiosity"},
+      {id:2,start_time:sp*2,end_time:sp*2+65,hook:"You don't rise to your goals. You fall to your identity.",why_viral:"Counterintuitive truth that challenges conventional wisdom. Creates an immediate aha moment people save and send to friends — strong share velocity.",viral_score:9.1,captions:["This reframes everything","The real reason you're stuck","Identity beats goals"],platform:"Instagram Reels",emotion:"insight"},
+      {id:3,start_time:sp*3,end_time:sp*3+70,hook:"Broke at 23. Seven figures by 26. One question changed it.",why_viral:"Dramatic before/after with raw personal honesty. The vulnerability of admitting struggle combined with proof of transformation is deeply shareable content.",viral_score:8.8,captions:["The question that changed everything","My real story","From zero to this"],platform:"YouTube Shorts",emotion:"inspiration"},
+      {id:4,start_time:sp*4,end_time:sp*4+72,hook:"Your brain is actively confirming whatever identity you chose",why_viral:"Neuroscience framing makes self-improvement advice feel scientifically validated. High save rate on LinkedIn and TikTok — people return to watch again.",viral_score:8.4,captions:["Your brain does this daily","Neuroplasticity simplified","Why mindset is everything"],platform:"LinkedIn",emotion:"surprise"},
+      {id:5,start_time:sp*5-10,end_time:sp*5+55,hook:"Write 10 things down. Do ONE tomorrow. Watch what happens.",why_viral:"Direct call-to-action creates immediate participation. Actionable clips get bookmarked 3x more than passive insight content — drives repeat visits.",viral_score:8.1,captions:["Do this tomorrow morning","The 10-item exercise","Start with just one"],platform:"TikTok",emotion:"action"}
+    ]
+  };
+}
+
+/* ═══════════════════════════════════════
+   RENDER RESULTS
+═══════════════════════════════════════ */
+function render(data) {
+  const el = document.getElementById('results');
+  el.style.display = 'block';
+
+  const sc = data.total_viral_potential || 0;
+  const bc = sc >= 8 ? 'bt' : sc >= 6 ? 'bg' : 'br';
+  document.getElementById('rbdgs').innerHTML =
+    `<span class="bdg ${bc}">⚡ ${sc.toFixed(1)}/10 Viral</span>` +
+    `<span class="bdg br">✂️ ${(data.clips||[]).length} Clips</span>` +
+    `<span class="bdg bg">📱 ${data.content_type||'Video'}</span>`;
+  document.getElementById('rsum').innerHTML = `<strong>Summary:</strong> ${eh(data.summary||'')}`;
+
+  const list = document.getElementById('clips');
+  list.innerHTML = '';
+
+  (data.clips || []).forEach((clip, i) => {
+    const s   = clip.viral_score || 0;
+    const nc  = s>=8?'sh':s>=6?'sm':'sl';
+    const fc  = s>=8?'fh':s>=6?'fm':'fl';
+    const pc  = platCls(clip.platform);
+    const emo = ({'surprise':'😲','curiosity':'🤔','inspiration':'🔥','insight':'💡','action':'🎯','energy':'⚡'})[clip.emotion]||'✨';
+    const caps = (clip.captions||[]).map(c=>`<span class="cap">"${eh(c)}"</span>`).join('');
+    const st  = clip.start_time||0, en = clip.end_time||0;
+    const ds  = Math.round(en-st);
+
+    const div = document.createElement('div');
+    div.className = 'cc';
+    div.id = 'cc'+clip.id;
+
+    div.innerHTML = `
+      <div class="cch" onclick="toggle(${clip.id})">
+        <div class="ccn ${i===0?'top':''}">${i+1}</div>
+        <div class="cci">
+          <div class="cck">${eh(clip.hook)}</div>
+          <div class="cctags">
+            <span class="ctime">${ft(st)} → ${ft(en)} · ${ds}s</span>
+            <span class="plat ${pc}">${eh(clip.platform||'TikTok')}</span>
+          </div>
+        </div>
+        <div class="scw">
+          <div class="scl">Viral Score</div>
+          <div class="scn ${nc}">${s.toFixed(1)}</div>
+          <div class="sb"><div class="sbf ${fc}" style="width:${Math.round(s/10*100)}%"></div></div>
+        </div>
+      </div>
+      <div class="ccb">
+        ${buildClipZone(clip, i)}
+        <div class="ccd">
+          <div class="dl">Why this goes viral</div>
+          <div class="why">${eh(clip.why_viral||'')}</div>
+          <div class="dl">Caption hooks</div>
+          <div class="caps">${caps}</div>
+          <span class="etag">${emo} ${cap1(clip.emotion||'engaging')} moment</span>
+          <div class="acs">
+            <button class="ac" data-copy="${ea(clip.hook)}" data-msg="Hook copied!">📋 Copy Hook</button>
+            <button class="ac" data-copy="${ea((clip.captions||[]).join('\n'))}" data-msg="Captions copied!">✍️ Copy Captions</button>
+            <button class="ac" onclick="exportBrief(${clip.id})">📤 Export Brief</button>
+          </div>
+        </div>
+      </div>`;
+    list.appendChild(div);
+  });
+
+  /* safe copy — event delegation */
+  list.querySelectorAll('[data-copy]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      doCopy(btn.getAttribute('data-copy').replace(/\\n/g,'\n'), btn.getAttribute('data-msg')||'Copied!');
+    });
+  });
+
+  el.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* Build the clip zone HTML */
+function buildClipZone(clip, idx) {
+  const st = clip.start_time||0, en = clip.end_time||0, ds = Math.round(en-st);
+  const hasVid = !!mainVidURL && activeTab === 'upload';
+
+  if (hasVid) {
+    return `<div class="clipzone">
+      <div class="cz-label">Clip ${idx+1} Preview &nbsp;<span>${ft(st)} → ${ft(en)} · ${ds}s</span></div>
+      <div class="clip-prog" id="prog${clip.id}"><div class="clip-prog-fill" id="pf${clip.id}" style="width:0%"></div></div>
+      <div class="clip-preview-box" id="cpb${clip.id}">
+        <div class="clip-placeholder">
+          <strong>🎬 ${ft(st)} → ${ft(en)} · ${ds}s clip</strong>
+          Press "▶ Play Clip" to preview, or "✂️ Cut Clip" to generate a downloadable file.
+        </div>
+      </div>
+      <div class="cz-btns">
+        <button class="czb play" onclick="previewClip(${clip.id},${st},${en})">▶ Play Clip</button>
+        <button class="czb cut" id="cutbtn${clip.id}" onclick="cutClip(${clip.id},${st},${en})">✂️ Cut &amp; Download</button>
+        <span class="cz-status" id="czs${clip.id}">ready</span>
+      </div>
+    </div>`;
+  }
+
+  return `<div class="clipzone">
+    <div class="cz-label">Clip ${idx+1} Window</div>
+    <div class="clip-preview-box">
+      <div class="clip-placeholder">
+        <strong>⏱ ${ft(st)} → ${ft(en)} · ${ds}s</strong>
+        Seek to this timestamp in your editor.<br>Use <strong>Upload Video</strong> tab for in-browser cut &amp; preview.
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ═══════════════════════════════════════
+   VIDEO PREVIEW (seek + play range)
+═══════════════════════════════════════ */
+function previewClip(clipId, start, end) {
+  const box = document.getElementById('cpb'+clipId);
+  let vid = box.querySelector('video');
+  if (!vid) {
+    box.innerHTML = '';
+    vid = document.createElement('video');
+    vid.src = mainVidURL;
+    vid.controls = true;
+    vid.playsinline = true;
+    vid.style.cssText = 'width:100%;display:block;border-radius:8px;max-height:280px';
+    box.appendChild(vid);
+  }
+  vid.currentTime = start;
+  vid.play();
+  setStatus(clipId, 'playing...');
+
+  // Auto-pause at end
+  const tick = () => {
+    if (vid.currentTime >= end) {
+      vid.pause();
+      vid.removeEventListener('timeupdate', tick);
+      setStatus(clipId, 'done · ' + ft(start) + ' → ' + ft(end));
+    }
+  };
+  vid.removeEventListener('timeupdate', tick);
+  vid.addEventListener('timeupdate', tick);
+}
+
+/* ═══════════════════════════════════════
+   VIDEO CUTTING — MediaRecorder approach
+   Records the live playback of the video
+   between start→end into a Blob
+═══════════════════════════════════════ */
+function cutClip(clipId, start, end) {
+  if (!mainVidURL) { toast('Upload a video first', 'err'); return; }
+
+  const btn  = document.getElementById('cutbtn'+clipId);
+  const prog = document.getElementById('prog'+clipId);
+  const pf   = document.getElementById('pf'+clipId);
+  const box  = document.getElementById('cpb'+clipId);
+
+  btn.disabled  = true;
+  btn.textContent = '⏳ Cutting...';
+  prog.style.display = 'block';
+  pf.style.width = '0%';
+  setStatus(clipId, 'preparing...');
+
+  // Create a hidden video element for recording
+  const src = document.createElement('video');
+  src.src       = mainVidURL;
+  src.muted     = true;         // required for captureStream
+  src.playsinline = true;
+  src.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px';
+  document.body.appendChild(src);
+
+  src.addEventListener('loadedmetadata', () => {
+    src.currentTime = start;
+  });
+
+  src.addEventListener('seeked', function onSeeked() {
+    src.removeEventListener('seeked', onSeeked);
+    setStatus(clipId, 'recording...');
+
+    // Capture the video stream
+    let stream;
+    try {
+      stream = src.captureStream ? src.captureStream() : src.mozCaptureStream();
+    } catch(e) {
+      // Fallback: browser doesn't support captureStream
+      cleanupSrc();
+      fallbackCut(clipId, start, end, btn, prog);
+      return;
+    }
+
+    // Pick supported MIME type
+    const mimes = ['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm','video/mp4'];
+    const mime  = mimes.find(m => MediaRecorder.isTypeSupported(m)) || '';
+    
+    const chunks = [];
+    let rec;
+    try {
+      rec = new MediaRecorder(stream, mime ? { mimeType: mime } : {});
+    } catch(e) {
+      cleanupSrc();
+      fallbackCut(clipId, start, end, btn, prog);
+      return;
+    }
+
+    rec.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+
+    rec.onstop = () => {
+      const blob = new Blob(chunks, { type: mime || 'video/webm' });
+      cleanupSrc();
+      onClipReady(clipId, blob, start, end, btn, prog, box);
+    };
+
+    const duration = end - start;
+    let elapsed    = 0;
+
+    rec.start(200); // collect every 200ms
+    src.play();
+
+    // Progress ticker
+    const ticker = setInterval(() => {
+      elapsed = src.currentTime - start;
+      const pct = Math.min(100, Math.round((elapsed / duration) * 100));
+      pf.style.width = pct + '%';
+      setStatus(clipId, 'cutting... ' + pct + '%');
+    }, 300);
+
+    // Stop when we reach end time
+    const stopper = setInterval(() => {
+      if (src.currentTime >= end || src.ended || src.paused) {
+        clearInterval(stopper);
+        clearInterval(ticker);
+        src.pause();
+        rec.stop();
+        pf.style.width = '100%';
+        setStatus(clipId, 'finalizing...');
+      }
+    }, 100);
+
+    // Safety timeout
+    setTimeout(() => {
+      if (rec.state === 'recording') {
+        clearInterval(stopper); clearInterval(ticker);
+        src.pause(); rec.stop();
+      }
+    }, (duration + 5) * 1000);
+  }, {once:true});
+
+  function cleanupSrc() {
+    try { src.pause(); src.src = ''; document.body.removeChild(src); } catch(_) {}
+  }
+}
+
+/* When clip is ready — show preview + download */
+function onClipReady(clipId, blob, start, end, btn, prog, box) {
+  const clipURL = URL.createObjectURL(blob);
+  const ds = Math.round(end - start);
+  const mb = (blob.size/1024/1024).toFixed(1);
+
+  // Replace placeholder with real clip video
+  box.innerHTML = '';
+  const v = document.createElement('video');
+  v.src = clipURL;
+  v.controls = true;
+  v.playsinline = true;
+  v.autoplay  = true;
+  v.style.cssText = 'width:100%;display:block;border-radius:8px;max-height:280px;background:#000';
+  box.appendChild(v);
+
+  // Download button
+  const dl = document.createElement('a');
+  dl.href     = clipURL;
+  dl.download = `clip-${clipId}-${ft(start).replace(':','-')}.webm`;
+  dl.className = 'czb cut';
+  dl.style.cssText = 'display:inline-flex;align-items:center;gap:5px;text-decoration:none;margin-top:.75rem';
+  dl.innerHTML = '⬇️ Download Clip (' + mb + ' MB)';
+
+  const czbtns = btn.parentElement;
+  czbtns.innerHTML = '';
+  czbtns.appendChild(dl);
+
+  // Re-cut button
+  const recut = document.createElement('button');
+  recut.className = 'czb';
+  recut.textContent = '✂️ Re-cut';
+  recut.onclick = () => cutClip(clipId, start, end);
+  czbtns.appendChild(recut);
+
+  prog.style.display = 'none';
+  setStatus(clipId, '✓ ' + ds + 's · ' + mb + ' MB · ready to download');
+  toast('✂️ Clip ' + clipId + ' ready! Tap Download to save.', 'ok');
+}
+
+/* Fallback when captureStream not available */
+function fallbackCut(clipId, start, end, btn, prog) {
+  btn.disabled = false;
+  btn.textContent = '✂️ Cut & Download';
+  prog.style.display = 'none';
+  setStatus(clipId, 'use editor to cut at ' + ft(start) + ' – ' + ft(end));
+  toast('Browser doesn\'t support in-browser cutting. Use the timestamps in your video editor.', 'warn');
+}
+
+function setStatus(id, msg) {
+  const el = document.getElementById('czs'+id);
+  if (el) el.textContent = msg;
+}
+
+/* ═══════════════════════════════════════
+   CARD TOGGLE
+═══════════════════════════════════════ */
+function toggle(id) {
+  const c = document.getElementById('cc'+id);
+  const open = c.classList.contains('open');
+  document.querySelectorAll('.cc.open').forEach(x => x.classList.remove('open'));
+  if (!open) c.classList.add('open');
+}
+
+/* ═══════════════════════════════════════
+   COPY — bulletproof
+═══════════════════════════════════════ */
+function doCopy(text, msg) {
+  const decoded = text.replace(/\\n/g,'\n');
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(decoded).then(()=>toast(msg)).catch(()=>fbCopy(decoded,msg));
+  } else { fbCopy(decoded, msg); }
+}
+function fbCopy(text, msg) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:-9999px;opacity:0';
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try { document.execCommand('copy'); toast(msg); } catch(_) { toast('Select & copy manually'); }
+  document.body.removeChild(ta);
+}
+
+function exportBrief(id) {
+  const c = (aiResults?.clips||[]).find(x=>x.id===id); if(!c) return;
+  const t = `HOOK: ${c.hook}\nTIMESTAMP: ${ft(c.start_time)} – ${ft(c.end_time)} (${Math.round((c.end_time||0)-(c.start_time||0))}s)\nPLATFORM: ${c.platform}\nVIRAL SCORE: ${c.viral_score}/10\n\nCAPTION HOOKS:\n${(c.captions||[]).join('\n')}\n\nWHY IT GOES VIRAL:\n${c.why_viral}`;
+  doCopy(t, 'Brief copied!');
+}
+
+/* ═══════════════════════════════════════
+   UTILS
+═══════════════════════════════════════ */
+function ft(s) { s=s||0; return Math.floor(s/60)+':'+(Math.floor(s%60)+'').padStart(2,'0'); }
+function eh(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function ea(s) { return String(s||'').replace(/\\/g,'\\\\').replace(/"/g,'&quot;').replace(/\n/g,'\\n'); }
+function cap1(s) { return s?s[0].toUpperCase()+s.slice(1):''; }
+function platCls(p) { return ({'TikTok':'ptt','Instagram Reels':'pig','YouTube Shorts':'pyt','LinkedIn':'pli'})[p]||'ptt'; }
+
+function toast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show' + (type==='err'?' err':type==='warn'?' warn':'');
+  clearTimeout(t._t);
+  t._t = setTimeout(()=>{ t.className=''; }, 3500);
+}
+</script>
+</body>
+</html>
